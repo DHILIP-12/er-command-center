@@ -1,48 +1,129 @@
 import streamlit as st
-import time
 import pandas as pd
 import random
 import requests
-
-from simulation import generate_initial_data, hospital
+import time
 
 # ---------------- CONFIG ----------------
-st.set_page_config(page_title="ER Dashboard", layout="wide")
+st.set_page_config(page_title="ER Command Center", layout="wide")
 
 # ---------------- THEME ----------------
 st.markdown("""
 <style>
-.stApp {background-color:#e6e6e6; color:#1a1a1a;}
-section[data-testid="stSidebar"] {background-color:#2b2b2b; color:white;}
 
-.kpi {
-    padding:16px;
-    border-radius:12px;
-    background:#2b2b2b;
-    border:2px solid #334155;
-    text-align:center;
-    color:white;
+/* ===== MAIN BACKGROUND ===== */
+.stApp {
+    background-color: #e6e6e6;
+    color: #1a1a1a;
 }
 
-.blue{border-left:5px solid #38bdf8;}
-.green{border-left:5px solid #22c55e;}
-.orange{border-left:5px solid #f97316;}
-.red{border-left:5px solid #ef4444;}
-.purple{border-left:5px solid #a855f7;}
+/* ===== SIDEBAR ===== */
+section[data-testid="stSidebar"] {
+    background-color: #2b2b2b;
+}
+section[data-testid="stSidebar"] * {
+    color: #1a1a1a !important;
+}
 
+/* ===== HEADER ===== */
 header[data-testid="stHeader"] {
-    background-color:#353839 !important;
+    background-color: #2b2b2b !important;
 }
+
+/* HEADER TEXT + ICON FIX */
+header[data-testid="stHeader"] * {
+    color: #ffffff !important;
+    fill: #5d5d5d !important;
+}
+
+/* HOVER EFFECT */
+header[data-testid="stHeader"] button:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+/* ===== KPI CARDS ===== */
+.kpi {
+    padding: 18px;
+    border-radius: 14px;
+    background: #e6e6e6;
+    color: #1a1a1a;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
+}
+
+/* KPI BORDER COLORS */
+.blue{border-left:6px solid #38bdf8;}
+.green{border-left:6px solid #22c55e;}
+.orange{border-left:6px solid #f97316;}
+.red{border-left:6px solid #ef4444;}
+.purple{border-left:6px solid #a855f7;}
+
+/* ===== ALERT BOX ===== */
+.alert-box {
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: white;
+}
+
+.critical {background:#dc2626;}
+.warning {background:#f59e0b;}
+.stable {background:#16a34a;}
+
+/* ===== INPUT FIELDS ===== */
+input, textarea {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+/* PLACEHOLDER */
+::placeholder {
+    color: #6b7280 !important;
+}
+
+/* ===== SELECT DROPDOWN ===== */
+div[data-baseweb="select"] > div {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+/* ===== BUTTONS ===== */
+div.stButton > button {
+    background-color: #1e293b;
+    color: white;
+    border-radius: 8px;
+}
+
+/* ===== TABLE ===== */
+[data-testid="stDataFrame"] {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* ===== TEXT VISIBILITY FIX ===== */
+h1, h2, h3, h4, h5, h6, p, span, label {
+    color: #1a1a1a !important;
+}
+
+/* EXCEPTION: SIDEBAR TEXT */
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] p {
+    color: white !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
-
 # ---------------- TITLE ----------------
-st.title("🚑 ER Command Center")
-st.caption("Real-time Emergency Operations Monitoring System")
+st.title("🚑 ER COMMAND CENTER")
+st.caption("Live Hospital Operations • Decision System")
 
 # ---------------- SIDEBAR ----------------
 with st.sidebar:
-    st.title("⚙️ Control Panel")
+    st.header("⚙️ Control Panel")
 
     DEPARTMENTS = [
         "Emergency","Cardiology","Neurology","Orthopedics",
@@ -50,12 +131,36 @@ with st.sidebar:
         "General Surgery","Dermatology"
     ]
 
-    selected_dept = st.selectbox("🏥 Select Department", ["All"] + DEPARTMENTS)
-    refresh_rate = st.slider("⏱ Refresh Rate (sec)", 2, 10, 5)
+    selected_dept = st.selectbox("Department", ["All"] + DEPARTMENTS)
+
+# ---------------- MOCK HOSPITAL ----------------
+class hospital:
+    beds_occupied = random.randint(100, 180)
+    beds_total = 200
+    doctors_available = random.randint(5, 20)
+
+# ---------------- PATIENT SIMULATION ----------------
+def generate_patient():
+    return {
+        "PatientID": random.randint(10000, 99999),
+        "Department": random.choice(DEPARTMENTS),
+        "WaitTime": random.randint(5, 120),
+        "TriageLevel": random.choices(
+            [1,2,3,4,5],
+            weights=[5,10,25,30,30]
+        )[0],
+        "IsICU": random.choices([True, False], weights=[15,85])[0]
+    }
+
+def generate_data(n=5):
+    return pd.DataFrame([generate_patient() for _ in range(n)])
 
 # ---------------- INIT ----------------
 if "data" not in st.session_state:
-    st.session_state.data = generate_initial_data()
+    st.session_state.data = generate_data(100)
+
+if "prev_count" not in st.session_state:
+    st.session_state.prev_count = len(st.session_state.data)
 
 # ---------------- WEATHER ----------------
 API_KEY = "4F64DXD3PHWM6DHPPEN3TM9L2"
@@ -65,117 +170,158 @@ def get_weather():
     try:
         url = f"http://api.openweathermap.org/data/2.5/weather?q={CITY}&appid={API_KEY}&units=metric"
         res = requests.get(url).json()
+        if "main" not in res:
+            return 30, "Clear"
         return res["main"]["temp"], res["weather"][0]["main"]
     except:
         return 30, "Clear"
 
-# ---------------- LIVE LOOP ----------------
-placeholder = st.empty()
+temp, condition = get_weather()
 
-while True:
+# ---------------- LIVE DATA ----------------
+incoming = generate_data(5)
 
-    # simulate new incoming patients
-    new_data = generate_initial_data().sample(5)
-    st.session_state.data = pd.concat([st.session_state.data, new_data], ignore_index=True)
+if temp > 35:
+    incoming = pd.concat([incoming, generate_data(10)])
 
-    # keep max 1000 patients
-    st.session_state.data = st.session_state.data.tail(1000)
+if condition in ["Rain", "Thunderstorm"]:
+    incoming = pd.concat([incoming, generate_data(8)])
 
-    df = st.session_state.data
+st.session_state.data = pd.concat([st.session_state.data, incoming]).tail(1000)
 
-    # filter
-    filtered_df = df if selected_dept == "All" else df[df["Department"] == selected_dept]
+df = st.session_state.data
+filtered_df = df if selected_dept == "All" else df[df["Department"] == selected_dept]
 
-    # ---------------- METRICS ----------------
-    icu = filtered_df[filtered_df["IsICU"] == True].shape[0]
-    critical = filtered_df[filtered_df["TriageLevel"] == 1].shape[0]
-    avg_wait = int(filtered_df["WaitTime"].mean()) if len(filtered_df) > 0 else 0
+# ---------------- METRICS ----------------
+total_patients = len(filtered_df)
+icu = filtered_df[filtered_df["IsICU"]].shape[0]
+critical = filtered_df[filtered_df["TriageLevel"] <= 2].shape[0]
+avg_wait = int(filtered_df["WaitTime"].mean()) if total_patients > 0 else 0
 
-    temp, condition = get_weather()
+load = hospital.beds_occupied / hospital.beds_total
 
-    with placeholder.container():
+# ---------------- TREND ----------------
+growth_rate = (total_patients - st.session_state.prev_count) / max(st.session_state.prev_count,1)
+trend = "stable"
 
-        st.markdown("### 📊 Overview")
+if growth_rate > 0.05:
+    trend = "increasing"
+elif growth_rate < -0.05:
+    trend = "decreasing"
 
-        c1,c2,c3,c4,c5,c6 = st.columns(6)
+st.session_state.prev_count = total_patients
 
-        c1.markdown(f'<div class="kpi blue">Patients<br>{len(filtered_df)}</div>',unsafe_allow_html=True)
-        c2.markdown(f'<div class="kpi green">Beds<br>{hospital.beds_occupied}/{hospital.beds_total}</div>',unsafe_allow_html=True)
-        c3.markdown(f'<div class="kpi orange">Doctors<br>{hospital.doctors_available}/{hospital.doctors_total}</div>',unsafe_allow_html=True)
-        c4.markdown(f'<div class="kpi purple">Avg Wait<br>{avg_wait}</div>',unsafe_allow_html=True)
-        c5.markdown(f'<div class="kpi red">ICU<br>{icu}</div>',unsafe_allow_html=True)
-        c6.markdown(f'<div class="kpi red">Critical<br>{critical}</div>',unsafe_allow_html=True)
+# ---------------- FORECAST ----------------
+predicted_patients = int(total_patients * (1 + growth_rate))
+predicted_icu = int(icu * (1 + growth_rate))
 
-        st.markdown("---")
+# ---------------- RISK SCORE ----------------
+risk_score = 0
+risk_score += (critical * 2)
+risk_score += (avg_wait * 0.5)
+risk_score += (icu * 1.5)
+risk_score += (load * 100)
 
-        # ---------------- ALERTS ----------------
-        st.markdown("### 🚨 COMMAND ALERT PANEL")
+risk_score = int(min(risk_score / 10, 100))
 
-        actions = []
+# ---------------- KPI ----------------
+st.markdown("## 📊 System Overview")
 
-        load = hospital.beds_occupied / hospital.beds_total
+c1,c2,c3,c4,c5,c6 = st.columns(6)
 
-        if critical > 100:
-            st.error("🚨 CRITICAL PATIENT SURGE — IMMEDIATE ACTION REQUIRED")
+c1.markdown(f'<div class="kpi blue">Patients<br>{total_patients}</div>', unsafe_allow_html=True)
+c2.markdown(f'<div class="kpi green">Beds<br>{hospital.beds_occupied}/{hospital.beds_total}</div>', unsafe_allow_html=True)
+c3.markdown(f'<div class="kpi purple">Avg Wait<br>{avg_wait} min</div>', unsafe_allow_html=True)
+c4.markdown(f'<div class="kpi red">Critical<br>{critical}</div>', unsafe_allow_html=True)
+c5.markdown(f'<div class="kpi red">ICU<br>{icu}</div>', unsafe_allow_html=True)
+c6.markdown(f'<div class="kpi orange">Risk<br>{risk_score}</div>', unsafe_allow_html=True)
 
-        if load > 0.9:
-            st.error("🚨 ER OVERLOAD")
-            actions += ["Divert non-critical patients", "Open temporary wards"]
+# ---------------- DECISION STATUS ----------------
+if risk_score > 70:
+    st.error("🚨 SYSTEM AT HIGH RISK — IMMEDIATE ACTION REQUIRED")
+elif risk_score > 40:
+    st.warning("⚠️ SYSTEM UNDER PRESSURE")
+else:
+    st.success("✅ SYSTEM STABLE")
 
-        elif load > 0.7:
-            st.warning("⚠️ ER Getting Busy")
-            actions.append("Prepare additional beds")
+# ---------------- ALERTS ----------------
+alerts = []
+actions = []
 
-        if hospital.doctors_available < 10:
-            st.warning("⚠️ Doctor Shortage")
-            actions.append("Call backup doctors")
+if critical > 50:
+    alerts.append(("Critical patients exceed safe threshold", "critical"))
+    actions.append("Activate emergency protocol")
 
-        if avg_wait > 40:
-            st.error("🚨 High Waiting Time")
-            actions.append("Improve triage speed")
+if load > 0.9:
+    alerts.append(("ER capacity exceeded", "critical"))
+    actions.append("Divert incoming patients")
 
-        icu_ratio = icu / max(len(filtered_df),1)
-        if icu_ratio > 0.3:
-            st.error("🚨 High ICU Demand")
-            actions.append("Increase ICU capacity")
+elif load > 0.7:
+    alerts.append(("ER nearing capacity", "warning"))
+    actions.append("Prepare additional beds")
 
-        # ---------------- WEATHER ----------------
-        st.markdown("### 🌦 Weather Impact")
+if avg_wait > 45:
+    alerts.append((f"High wait time: {avg_wait} min", "critical"))
+    actions.append("Increase triage staff")
 
-        st.write(f"🌡 {temp}°C | {condition}")
+if hospital.doctors_available < 8:
+    alerts.append(("Doctor shortage", "warning"))
+    actions.append("Call backup doctors")
 
-        if temp > 35:
-            st.warning("🔥 Heatwave → Increased ER admissions expected")
+if (temp > 35 or condition in ["Rain", "Thunderstorm"]) and load > 0.8:
+    alerts.append(("Weather-driven surge expected", "critical"))
+    actions.append("Prepare surge response")
 
-        if condition in ["Rain", "Thunderstorm"]:
-            st.warning("🌧 Storm → Accident cases likely")
+# PRIORITIZE ALERTS
+alerts = sorted(alerts, key=lambda x: x[1] == "critical", reverse=True)[:2]
 
-        if load > 0.85 and (temp > 35 or condition in ["Rain", "Thunderstorm"]):
-            st.error("🚨 CRITICAL: Weather + Overload Risk")
+# ---------------- ALERT PANEL ----------------
+st.markdown("## 🚨 COMMAND ALERT PANEL")
 
-        # ---------------- ACTIONS ----------------
-        if actions:
-            st.markdown("### 🧠 Suggested Actions")
-            for a in list(set(actions)):
-                st.info(f"👉 {a}")
-        else:
-            st.success("✅ System Stable")
+if alerts:
+    for msg, level in alerts:
+        st.markdown(f'<div class="alert-box {level}">🚨 {msg}</div>', unsafe_allow_html=True)
+else:
+    st.markdown('<div class="alert-box stable">✅ No critical alerts</div>', unsafe_allow_html=True)
 
-        st.markdown("---")
+# ---------------- ACTIONS ----------------
+if actions:
+    st.markdown("### 🧠 Recommended Actions")
+    for a in list(set(actions)):
+        st.write(f"👉 {a}")
 
-        # ---------------- CHARTS ----------------
-        col1,col2 = st.columns(2)
+# ---------------- FORECAST ----------------
+st.markdown("## 🔮 Forecast Panel")
 
-        with col1:
-            st.subheader("Department Load")
-            st.bar_chart(filtered_df["Department"].value_counts())
+f1,f2 = st.columns(2)
+f1.metric("Predicted Patients (next cycle)", predicted_patients)
+f2.metric("Predicted ICU Demand", predicted_icu)
 
-        with col2:
-            st.subheader("Wait Time Trend")
-            st.line_chart(filtered_df["WaitTime"].tail(50))
+# ---------------- WEATHER ----------------
+st.markdown("## 🌦 Weather Influence")
 
-        # ---------------- TABLE ----------------
-        st.markdown("### 📡 Live Patient Monitor")
-        st.dataframe(filtered_df.tail(50), use_container_width=True)
+st.write(f"🌡 {temp}°C | {condition}")
 
-    time.sleep(refresh_rate)
+if temp > 35:
+    st.warning("🔥 Heatwave → Increased ER admissions expected")
+elif condition in ["Rain", "Thunderstorm"]:
+    st.warning("🌧 Storm → Trauma cases expected")
+else:
+    st.success("✅ Weather stable")
+
+# ---------------- CHARTS ----------------
+st.markdown("## 📈 Live Insights")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Department Load")
+    st.bar_chart(filtered_df["Department"].value_counts())
+
+with col2:
+    st.subheader("Wait Time Trend")
+    st.line_chart(filtered_df["WaitTime"].tail(50))
+
+# ---------------- AUTO REFRESH (LAST LINE ONLY) ----------------
+time.sleep(60)
+st.rerun()
