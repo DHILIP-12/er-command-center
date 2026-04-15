@@ -253,12 +253,17 @@ st.markdown("## System Overview")
 
 c1,c2,c3,c4,c5,c6 = st.columns(6)
 
-c1.markdown(f'<div class="kpi blue">Patients<br>{total_patients}</div>', unsafe_allow_html=True)
-c2.markdown(f'<div class="kpi green">Beds<br>{beds_occupied}/{beds_total}</div>', unsafe_allow_html=True)
-c3.markdown(f'<div class="kpi purple">Avg Wait<br>{avg_wait} min</div>', unsafe_allow_html=True)
-c4.markdown(f'<div class="kpi red">Critical<br>{critical}</div>', unsafe_allow_html=True)
-c5.markdown(f'<div class="kpi red">ICU<br>{icu}</div>', unsafe_allow_html=True)
-c6.markdown(f'<div class="kpi orange">Load<br>{int(load*100)}%</div>', unsafe_allow_html=True)
+c1.markdown(f'<div class="kpi blue">Total Patients<br>{total_patients}</div>', unsafe_allow_html=True)
+
+c2.markdown(f'<div class="kpi green">Bed Occupancy<br>{beds_occupied}/{beds_total}</div>', unsafe_allow_html=True)
+
+c3.markdown(f'<div class="kpi purple">Avg Wait Time<br>{avg_wait} min</div>', unsafe_allow_html=True)
+
+c4.markdown(f'<div class="kpi red">Critical Cases<br>{critical}</div>', unsafe_allow_html=True)
+
+c5.markdown(f'<div class="kpi red">ICU Demand<br>{icu}</div>', unsafe_allow_html=True)
+
+c6.markdown(f'<div class="kpi orange">Utilization<br>{int(load*100)}%</div>', unsafe_allow_html=True)
 
 
 
