@@ -192,13 +192,27 @@ st.session_state.data = pd.concat([st.session_state.data, incoming]).tail(1000)
 df = st.session_state.data
 filtered_df = df if selected_dept == "All" else df[df["Department"] == selected_dept]
 
+
 # ---------------- METRICS ----------------
 total_patients = len(filtered_df)
-icu = filtered_df[filtered_df["IsICU"]].shape[0]
+
+# 🔥 BEDS (derived from patients)
+beds_total = 200
+beds_occupied = min(int(total_patients * 0.75), beds_total)
+
+# 🔥 ICU (derived from beds)
+icu = int(beds_occupied * 0.2)
+
+# 🔥 CRITICAL (from data)
 critical = filtered_df[filtered_df["TriageLevel"] <= 2].shape[0]
+
+# 🔥 AVG WAIT
 avg_wait = int(filtered_df["WaitTime"].mean()) if total_patients > 0 else 0
 
+# 🔥 LOAD
+load = beds_occupied / beds_total
 load = hospital.beds_occupied / hospital.beds_total
+
 
 # ---------------- TREND ----------------
 growth_rate = (total_patients - st.session_state.prev_count) / max(st.session_state.prev_count,1)
@@ -230,19 +244,25 @@ st.markdown("## 📊 System Overview")
 c1,c2,c3,c4,c5,c6 = st.columns(6)
 
 c1.markdown(f'<div class="kpi blue">Patients<br>{total_patients}</div>', unsafe_allow_html=True)
-c2.markdown(f'<div class="kpi green">Beds<br>{hospital.beds_occupied}/{hospital.beds_total}</div>', unsafe_allow_html=True)
+c2.markdown(f'<div class="kpi green">Beds<br>{beds_occupied}/{beds_total}</div>', unsafe_allow_html=True)
 c3.markdown(f'<div class="kpi purple">Avg Wait<br>{avg_wait} min</div>', unsafe_allow_html=True)
 c4.markdown(f'<div class="kpi red">Critical<br>{critical}</div>', unsafe_allow_html=True)
 c5.markdown(f'<div class="kpi red">ICU<br>{icu}</div>', unsafe_allow_html=True)
-c6.markdown(f'<div class="kpi orange">Risk<br>{risk_score}</div>', unsafe_allow_html=True)
+c6.markdown(f'<div class="kpi orange">Load<br>{int(load*100)}%</div>', unsafe_allow_html=True)
+
+
 
 # ---------------- DECISION STATUS ----------------
-if risk_score > 70:
-    st.error("🚨 SYSTEM AT HIGH RISK — IMMEDIATE ACTION REQUIRED")
-elif risk_score > 40:
-    st.warning("⚠️ SYSTEM UNDER PRESSURE")
+if load > 0.85 or avg_wait > 45 or critical > 40:
+    st.error("🚨 SYSTEM UNDER STRESS — IMMEDIATE ACTION REQUIRED")
+
+elif load > 0.6:
+    st.warning("⚠️ SYSTEM UNDER MODERATE LOAD")
+
 else:
     st.success("✅ SYSTEM STABLE")
+
+
 
 # ---------------- ALERTS ----------------
 alerts = []
