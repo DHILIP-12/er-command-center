@@ -7,6 +7,7 @@ import time
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="ER Command Center", layout="wide")
 
+
 # ---------------- THEME ----------------
 st.markdown("""
 <style>
@@ -17,6 +18,7 @@ st.markdown("""
     color: #1a1a1a;
 }
 
+
 /* ===== SIDEBAR ===== */
 section[data-testid="stSidebar"] {
     background-color: #2b2b2b;
@@ -24,6 +26,7 @@ section[data-testid="stSidebar"] {
 section[data-testid="stSidebar"] * {
     color: #1a1a1a !important;
 }
+
 
 /* ===== HEADER ===== */
 header[data-testid="stHeader"] {
@@ -36,10 +39,12 @@ header[data-testid="stHeader"] * {
     fill: #5d5d5d !important;
 }
 
+
 /* HOVER EFFECT */
 header[data-testid="stHeader"] button:hover {
     background-color: rgba(255,255,255,0.1);
 }
+
 
 /* ===== KPI CARDS ===== */
 .kpi {
@@ -60,6 +65,7 @@ header[data-testid="stHeader"] button:hover {
 .red{border-left:6px solid #ef4444;}
 .purple{border-left:6px solid #a855f7;}
 
+
 /* ===== ALERT BOX ===== */
 .alert-box {
     padding: 20px;
@@ -73,6 +79,7 @@ header[data-testid="stHeader"] button:hover {
 .warning {background:#f59e0b;}
 .stable {background:#16a34a;}
 
+
 /* ===== INPUT FIELDS ===== */
 input, textarea {
     background-color: #ffffff !important;
@@ -84,11 +91,13 @@ input, textarea {
     color: #6b7280 !important;
 }
 
+
 /* ===== SELECT DROPDOWN ===== */
 div[data-baseweb="select"] > div {
     background-color: #ffffff !important;
     color: #000000 !important;
 }
+
 
 /* ===== BUTTONS ===== */
 div.stButton > button {
@@ -102,6 +111,7 @@ div.stButton > button {
     border-radius: 10px;
     overflow: hidden;
 }
+
 
 /* ===== TEXT VISIBILITY FIX ===== */
 h1, h2, h3, h4, h5, h6, p, span, label {
@@ -118,7 +128,7 @@ section[data-testid="stSidebar"] p {
 </style>
 """, unsafe_allow_html=True)
 # ---------------- TITLE ----------------
-st.title("🚑 ER COMMAND CENTER")
+st.title("ER COMMAND CENTER")
 st.caption("Live Hospital Operations • Decision System")
 
 # ---------------- SIDEBAR ----------------
@@ -239,7 +249,7 @@ risk_score += (load * 100)
 risk_score = int(min(risk_score / 10, 100))
 
 # ---------------- KPI ----------------
-st.markdown("## 📊 System Overview")
+st.markdown("## System Overview")
 
 c1,c2,c3,c4,c5,c6 = st.columns(6)
 
