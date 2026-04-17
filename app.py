@@ -7,7 +7,7 @@ import time
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="ER Command Center", layout="wide")
 
-# ---------------- THEME (UNCHANGED) ----------------
+# ---------------- THEME ----------------
 st.markdown("""
 <style>
 .stApp {background-color: #e6e6e6;color: #1a1a1a;}
@@ -18,18 +18,33 @@ header[data-testid="stHeader"] * {color: #ffffff !important;}
 .kpi {padding:18px;border-radius:14px;background:#e6e6e6;color:#1a1a1a;
 text-align:center;font-size:18px;font-weight:600;
 box-shadow:0px 4px 12px rgba(0,0,0,0.15);}
-.blue{border-left:6px solid #38bdf8;}
-.green{border-left:6px solid #22c55e;}
-.orange{border-left:6px solid #f97316;}
-.red{border-left:6px solid #ef4444;}
-.purple{border-left:6px solid #a855f7;}
+.blue{border-left:6px solid #2b2b2b;}
+.green{border-left:6px solid #2b2b2b;}
+.orange{border-left:6px solid #2b2b2b;}
+.red{border-left:6px solid #2b2b2b;}
+.purple{border-left:6px solid #2b2b2b;}
 .alert-box {padding:20px;border-radius:12px;margin-bottom:10px;
 font-weight:bold;color:white;}
 .critical {background:#dc2626;}
 .warning {background:#f59e0b;}
 .stable {background:#16a34a;}
+
+[data-testid="stMetricValue"],
+[data-testid="stMetricLabel"] {
+    color: #1a1a1a !important;
+}
+
+div[data-baseweb="select"] * {
+    color: #000000 !important;
+}
+
+div[data-baseweb="select"] {
+    background-color: #ffffff !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
+
 
 # ---------------- TITLE ----------------
 st.title("ER COMMAND CENTER")
